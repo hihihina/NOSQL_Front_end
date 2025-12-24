@@ -6,7 +6,9 @@ import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState('account');
 
   const onFinish = async (values) => {
@@ -29,9 +31,21 @@ const Login = () => {
   };
 
   const handleSendCode = async () => {
-    // Implementation for sending code would require getting the username from the form
-    // This is a simplified version
-    message.info('请先输入用户名');
+    const username = form.getFieldValue('username');
+    if (!username) {
+      message.open({ key: 'sendCode', type: 'info', content: '请先输入用户名' });
+      return;
+    }
+    if (sending) return;
+    setSending(true);
+    try {
+      await sendCode({ username });
+      message.open({ key: 'sendCode', type: 'success', content: '验证码已发送' });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -47,6 +61,7 @@ const Login = () => {
               children: (
                 <Form
                   name="account_login"
+                  form={form}
                   onFinish={onFinish}
                 >
                   <Form.Item
@@ -75,6 +90,7 @@ const Login = () => {
               children: (
                 <Form
                   name="code_login"
+                  form={form}
                   onFinish={onFinish}
                 >
                   <Form.Item
@@ -89,7 +105,7 @@ const Login = () => {
                   >
                     <div style={{ display: 'flex', gap: 8 }}>
                       <Input prefix={<MailOutlined />} placeholder="验证码" />
-                      <Button onClick={handleSendCode}>获取验证码</Button>
+                      <Button onClick={handleSendCode} loading={sending}>获取验证码</Button>
                     </div>
                   </Form.Item>
                   <Form.Item>
